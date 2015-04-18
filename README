@@ -1,0 +1,89 @@
+# ScS program.
+#
+# XinWANG, 2015.04 
+#
+# Software need: SAC/GMT/Taup
+# Before use, you need to go to ../code and complie source code.
+#####################################################
+# SOURCE CODE. Go to ./code
+#####################################################
+1. Deconv code --- FDdeconv.c;
+2. Time to dep code --- ScS_t2p;
+3. Bin_stack code --- Bin_stack.f90, Bin_profile.f90;
+4. pssac code --- pssac;
+5. boostrap code --- bootconfd.f90, bootstd.f90;
+6. 3D velocity code --- Get3DVp/s.f90, 3DVcorrect.f90;
+
+use build.it.sh to complie the code.
+
+#####################################################
+# MAIN SHELL. Go to ./ScS_shell
+#####################################################
+para.info	------  Set some basic parameters. Such as earthquake ID; Bandpass filter parameter...
+
+1.Data_pre.sh	------	Extract SAC data from seed file, and remove the response file. 
+
+2.Pre_process.sh -----  Rotate, bandpass, set taup_time.
+
+3.Cut-Deconv.sh ------	Deconv.
+
+4.Time2Dep.sh   ------  Time to Depth.
+
+5.Pierce_point.sh ----  Calcuate reflection point of sScSn_d+.
+
+######################################################
+# SELECT DATA.
+######################################################
+checkRAW.pl     ------	Use after 2.Pre_process.sh to select good seimography.
+
+checkDeconv.pl 	------	Use after 3.Cut-Deconv.sh to select good trace.
+
+You can also check the pictures under floder Plot-ps ----- locate Data/ScS/EVENT_ID/sScS/Plot-ps
+
+######################################################
+# STACK DATA. 
+######################################################
+go to Stack floder for ScS Region stack.
+go to Stack_profile for ScS profile stack.
+
+stack.para	-------	Stack parameters. Such as earthquake ID; phase, stack region...
+
+1.stack-pre.sh  ------- Copy ScS traces from IDIR (input dir) to ODIR (Output dir), and plot pierceing point.
+
+2.Bin_stack.sh	-------	Bin size stack (use bootstrap method); Output---> Bin.final
+
+
+
+#######################################################
+# Example:
+#######################################################
+#1. Download raw seed data from http://www.fnet.bosai.go.jp/freesia/top.php?LANG=en. And put them under ./Data/Raw-Data;
+#2. Set para.info in ./ScS_shell/para.info. I set bandpass filter parameter 0.01-0.1HZ and water-level parameter: k=0.01, a=0.1;
+#3. sh 1.Data_pre.sh ---> /ScS/Data/Pre-Data;
+#4. sh 2.Pre_process.sh ---> /ScS/Data/ScS/EVENT_ID;
+#5. sh checkRAW.pl --- remove bad trace ---> /ScS/Data/ScS/EVENT_ID/Bad_trace;
+#6. sh 3.Cut-Deconv.sh --->/ScS/Data/ScS/EVENT_ID/sScSn/*_deconv; Check picutres under /ScS/Data/ScS/EVENT_ID/sScSn/Plot-ps;
+#7. sh checkDeconv.pl --- remove bad deconv ---> /ScS/Data/ScS/EVENT_ID/Bad_deconv;
+#8. sh 4.Time2Dep.sh ---> /ScS/Data/ScS/EVENT_ID/sScSn/*_dep; Check picutres under /ScS/Data/ScS/EVENT_ID/sScSn/Plot-ps;
+#9. sh 5.Piere_point.sh ---> /ScS/Data/ScS/EVENT_ID/Pierce_point;
+
+## Stack ##
+#1. Go to /home/wangxin/WORK/ScS/Stack;
+#2. Set stack.para. I use sScS phase to obtain 410-km discontinuity depth.
+    Set dLat 0.25(Bin space 0.25 degree), RLat 1.0 (Circle Bin with radius 1.0 degree.);
+    Set input and output in 1.stack-pre.sh and 2.Bin_stack.sh;
+#3. sh 1.stack-pre.sh ---> /ScS/Stack/sScS-410/ ---> Map.ps(pierceing point map);
+#4. sh 2.Bin_stack.sh ---> /ScS/Stack/sScS-410/Ans_stack/ ---> (*.sac for stack answer; *.sacLo and *.sacUp are estimated by bootstrap method; see more infomation use commond "bootstd" and "bootconfd") 
+    ---> Final file: Bin.fianl, You can use plot-all.sh and Plot-Bin.sh to plot the answer;
+#5. You can also use phase sScS2 and sScS3 to get the depth of 410-km discontinuity; and stack them base different weight and numer for sScSn(n=1,2,3); 
+    My stack parameter:standard deviation(STD < 10.) and set Weight(WsScS=1; WsScS2=0.5; WsScS3=0.3), number (NsScS>=10 || NsScS2>=30 || NsScS3=50 || NsScS1+2+3>=70); You can change this by yourself.
+    After stack ---> final.ans.
+#Note:  In this computer, I don't have "ifort", so there is something wrong in my answer.(when complie use gfortran, it will get the pseudorandom number, not the real random number. We need to complie use ifort).
+
+## Velcoity correction ##
+#1. Get the lat. and lot. information in final.ans. And copy it to /home/wangxin/WORK/ScS/code/3DVel;
+#2. Use commond Get3DVp to obtain velocity from GAP_P4, such as (Get3DV loc.final GAP_P4 15 0.7 3DVp.vel);
+#3. Use commond 3DVCorrect to correct 3D velocity model.
+
+
+
